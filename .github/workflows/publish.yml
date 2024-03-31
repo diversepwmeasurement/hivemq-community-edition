@@ -1,34 +1,37 @@
-name: Publish to Maven Central and Docker Hub
-
-on:
-  release:
-    types: [ published ]
-
 jobs:
   publish:
     environment: mavenCentralPublish
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
-      - name: Setup Java
-        uses: actions/setup-java@9704b39bf258b59bc04b50fa2dd55e9ed76b47a8 # v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-      - name: Publish to Maven Central
-        run: ./gradlew publishEmbeddedPublicationToSonatypeRepository closeAndReleaseSonatypeStagingRepository
-        env:
-          ORG_GRADLE_PROJECT_signKey: ${{ secrets.SIGN_KEY }}
-          ORG_GRADLE_PROJECT_signKeyPass: ${{ secrets.SIGN_KEY_PASS }}
-          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.SONATYPE_USERNAME }}
-          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.SONATYPE_PASSWORD }}
-      - name: Push To Docker Hub
-        run: ./gradlew pushReleaseToDockerHub
-        env:
-          ORG_GRADLE_PROJECT_dockerHubUsername: ${{ secrets.DOCKER_USERNAME }}
-          ORG_GRADLE_PROJECT_dockerHubPassword: ${{ secrets.DOCKER_TOKEN }}
-      - name: Attach HiveMQ Zip to GitHub Release
-        run: ./gradlew githubRelease
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - continue-on-error: true
+      name: Checkout
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+    - continue-on-error: true
+      name: Setup Java
+      uses: actions/setup-java@9704b39bf258b59bc04b50fa2dd55e9ed76b47a8
+      with:
+        distribution: temurin
+        java-version: '11'
+    - continue-on-error: true
+      env:
+        ORG_GRADLE_PROJECT_signKey: ${{ secrets.SIGN_KEY }}
+        ORG_GRADLE_PROJECT_signKeyPass: ${{ secrets.SIGN_KEY_PASS }}
+        ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.SONATYPE_PASSWORD }}
+        ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.SONATYPE_USERNAME }}
+      name: Publish to Maven Central
+      run: ./gradlew publishEmbeddedPublicationToSonatypeRepository closeAndReleaseSonatypeStagingRepository
+    - continue-on-error: true
+      env:
+        ORG_GRADLE_PROJECT_dockerHubPassword: ${{ secrets.DOCKER_TOKEN }}
+        ORG_GRADLE_PROJECT_dockerHubUsername: ${{ secrets.DOCKER_USERNAME }}
+      name: Push To Docker Hub
+      run: ./gradlew pushReleaseToDockerHub
+    - continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      name: Attach HiveMQ Zip to GitHub Release
+      run: ./gradlew githubRelease
+name: Publish to Maven Central and Docker Hub
+on:
+  repository_dispatch:
+    types: trigger-ga___publish.yml
